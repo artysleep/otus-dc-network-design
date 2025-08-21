@@ -73,6 +73,7 @@ int e1
    ipv6 ospf 1 area 0.0.0.1
    ip ospf neighbor bfd
    bfd interval 100 min-rx 100 multiplier 3
+   ipv6 ospf bfd
 int e2
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
@@ -80,6 +81,7 @@ int e2
    ipv6 ospf 1 area 0.0.0.1
    ip ospf neighbor bfd
    bfd interval 100 min-rx 100 multiplier 3
+   ipv6 ospf bfd
 int e3
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
@@ -87,6 +89,7 @@ int e3
    ipv6 ospf 1 area 0.0.0.1
    ip ospf neighbor bfd
    bfd interval 100 min-rx 100 multiplier 3
+   ipv6 ospf bfd
 int lo0
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
@@ -118,6 +121,7 @@ int e1
    ipv6 ospf 1 area 0.0.0.1
    ip ospf neighbor bfd
    bfd interval 100 min-rx 100 multiplier 3
+   ipv6 ospf bfd
 int e2
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
@@ -125,6 +129,7 @@ int e2
    ipv6 ospf 1 area 0.0.0.1
    ip ospf neighbor bfd
    bfd interval 100 min-rx 100 multiplier 3
+   ipv6 ospf bfd
 int lo0
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
@@ -138,7 +143,7 @@ int lo0
 
 ##### BFD
 ```cfg
-Spine-1(config-if-Et3)#do sh bfd peers 
+Spine-1(config-if-Et2)#do sh bfd peers
 VRF name: default
 -----------------
 DstAddr        MyDisc    YourDisc  Interface/Transport    Type          LastUp 
@@ -152,6 +157,18 @@ DstAddr        MyDisc    YourDisc  Interface/Transport    Type          LastUp
          NA       No Diagnostic       Up
          NA       No Diagnostic       Up
          NA       No Diagnostic       Up
+
+DstAddr                      MyDisc    YourDisc   Interface/Transport     Type 
+------------------------ ----------- ----------- --------------------- --------
+fe80::5200:ff:fe15:f4e8   692257628  2598547920         Ethernet2(15)   normal 
+fe80::5200:ff:fecb:38c2  1835298636  3683112377         Ethernet1(14)   normal 
+fe80::5200:ff:fed7:ee0b  3111230538  3770119920         Ethernet3(16)   normal 
+
+           LastUp       LastDown            LastDiag    State
+-------------------- -------------- ------------------- -----
+   08/21/25 06:48             NA       No Diagnostic       Up
+   08/21/25 06:48             NA       No Diagnostic       Up
+   08/21/25 06:48             NA       No Diagnostic       Up
 ```
 
 ##### IPv4
