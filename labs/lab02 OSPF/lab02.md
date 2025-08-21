@@ -313,6 +313,109 @@ PING 2001:db8:fab:2003::2(2001:db8:fab:2003::2) 52 data bytes
 rtt min/avg/max/mdev = 13.918/15.422/17.655/1.289 ms, pipe 2, ipg/ewma 14.938/14.699 ms
 ```
 
+##### Проверка BFD
+```cfg
+Leaf-3(config-router-ospf3)#do sh ip ro ospf
+
+VRF: default
+Codes: C - connected, S - static, K - kernel, 
+       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
+       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
+       N2 - OSPF NSSA external type2, B - Other BGP Routes,
+       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
+       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
+       A O - OSPF Summary, NG - Nexthop Group Static Route,
+       V - VXLAN Control Service, M - Martian,
+       DH - DHCP client installed default route,
+       DP - Dynamic Policy Route, L - VRF Leaked,
+       G  - gRIBI, RC - Route Cache Route
+
+ O        10.0.0.1/32 [110/30] via 172.16.3.1, Ethernet1
+                               via 172.16.3.5, Ethernet2
+ O        10.0.0.2/32 [110/30] via 172.16.3.1, Ethernet1
+                               via 172.16.3.5, Ethernet2
+ O        10.0.1.1/32 [110/20] via 172.16.3.1, Ethernet1
+ O        10.0.2.2/32 [110/20] via 172.16.3.5, Ethernet2
+ O        172.16.1.0/30 [110/20] via 172.16.3.1, Ethernet1
+ O        172.16.1.4/30 [110/20] via 172.16.3.5, Ethernet2
+ O        172.16.2.0/30 [110/20] via 172.16.3.1, Ethernet1
+ O        172.16.2.4/30 [110/20] via 172.16.3.5, Ethernet2
+```
+```cfg
+Spine-1(config-if-Et2)#int e3
+Spine-1(config-if-Et3)#shutdown
+```
+```cfg
+Aug 21 06:54:13 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJACENCY_TEARDOWN: IPv6 Neighbor 10.0.1.1, interface Et1 adjacency dropped: interface went down
+Aug 21 06:54:13 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.1.1, interface Et1 state change: Full to Down
+Aug 21 06:54:13 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:172.16.3.5, intf:Ethernet2, type:normal) changed state from Up to Down diag CtrlTimeout
+0.1.1, interface 172.16.3.2 adjacency dropped: interface went down, state was: FULL
+Aug 21 06:54:13 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <FULL> to <DOWN>
+Aug 21 06:54:13 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_ADJACENCY_TEARDOWN: NGB 10.0.2.2, interface 172.16.3.6 adjacency dropped: Bfd Down notification, state was: FULL
+Aug 21 06:54:13 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <FULL> to <DOWN>
+Aug 21 06:54:13 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:fe80::5200:ff:fe03:3766, intf:Ethernet2, type:normal) changed state from Up to Down diag CtrlTimeout
+Aug 21 06:54:14 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJACENCY_TEARDOWN: IPv6 Neighbor 10.0.2.2, interface Et2 adjacency dropped: BFD Down notification
+Aug 21 06:54:14 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Full to Down
+Aug 21 06:54:14 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:172.16.3.5, intf:Ethernet2, type:normal) changed state from Down to AdminDown diag AdminDown
+Aug 21 06:54:14 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:fe80::5200:ff:fe03:3766, intf:Ethernet2, type:normal) changed state from Down to AdminDown diag AdminDown
+D: 10.0.2.2, From: fe80::5200:ff:fe03:3766%Et2
+Aug 21 06:54:14 Leaf-3 Rib: OSPF3: Invalid LSU packet: No such neighbor, RouterID: 10.0.2.2, From: fe80::5200:ff:fe03:3766%Et2
+Aug 21 06:54:15 Leaf-3 Rib: OSPF3: Invalid LSAck packet: No such neighbor, RouterID: 10.0.2.2, From: fe80::5200:ff:fe03:3766%Et2
+Aug 21 06:54:20 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <DOWN> to <DOWN>
+Aug 21 06:54:20 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <DOWN> to <INIT>
+Aug 21 06:54:20 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <INIT> to <2 WAYS>
+Aug 21 06:54:20 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <2 WAYS> to <EXCH START>
+Aug 21 06:54:21 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Down to Init
+Aug 21 06:54:21 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Init to Exch Start
+Aug 21 06:54:21 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Exch Start to Exchange
+Aug 21 06:54:21 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Exchange to Loading
+Aug 21 06:54:22 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJACENCY_ESTABLISHED: IPv6 Neighbor 10.0.2.2, interface Et2 adjacency established
+Aug 21 06:54:22 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Loading to Full
+Aug 21 06:54:23 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:fe80::5200:ff:fe03:3766, intf:Ethernet2, type:normal) changed state from Down to Up diag None
+Aug 21 06:54:25 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <EXCH START> to <EXCHANGE>
+Aug 21 06:54:25 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <EXCHANGE> to <LOADING>
+Aug 21 06:54:25 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.2.2, intf 172.16.3.5 change from <LOADING> to <FULL>
+Aug 21 06:54:25 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_ADJACENCY_ESTABLISHED: NGB 10.0.2.2, interface 172.16.3.6 adjacency established
+Aug 21 06:54:26 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:172.16.3.5, intf:Ethernet2, type:normal) changed state from Down to Up diag None
+Aug 21 06:58:59 Leaf-3 ConfigAgent: %SYS-5-CONFIG_I: Configured from console by admin on con0 (0.0.0.0)
+```
+
+```cfg
+Spine-1(config-if-Et3)#no shutdown 
+Spine-1(config-if-Et3)#do wr
+```
+
+```cfg
+Aug 21 07:01:02 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJACENCY_TEARDOWN: IPv6 Neighbor 10.0.2.2, interface Et2 adjacency dropped: BFD Down notification
+Aug 21 07:01:02 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Full to Down
+Aug 21 07:01:02 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:fe80::5200:ff:fe03:3766, intf:Ethernet2, type:normal) changed state from Init to AdminDown diag AdminDown
+Aug 21 07:01:11 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Down to Init
+Aug 21 07:01:11 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Init to Exch Start
+Aug 21 07:01:11 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Exch Start to Exchange
+Aug 21 07:01:11 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Exchange to Loading
+Aug 21 07:01:12 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJACENCY_ESTABLISHED: IPv6 Neighbor 10.0.2.2, interface Et2 adjacency established
+Aug 21 07:01:12 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.2.2, interface Et2 state change: Loading to Full
+None
+Aug 21 07:01:28 Leaf-3 Ebra: %LINEPROTO-5-UPDOWN: Line protocol on Interface Ethernet1 ("to-S1"), changed state to up
+Aug 21 07:01:30 Leaf-3 Lldp: %LLDP-5-NEIGHBOR_NEW: LLDP neighbor with chassisId 5000.00d5.5dc0 and portId "Ethernet3" added on interface Ethernet1
+Aug 21 07:01:31 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <DOWN> to <DOWN>
+Aug 21 07:01:31 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <DOWN> to <INIT>
+Aug 21 07:01:31 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <INIT> to <2 WAYS>
+Aug 21 07:01:31 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <2 WAYS> to <EXCH START>
+Aug 21 07:01:36 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <EXCH START> to <EXCHANGE>
+Aug 21 07:01:36 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <EXCHANGE> to <LOADING>
+Aug 21 07:01:36 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_STATE_CHANGE: NGB 10.0.1.1, intf 172.16.3.1 change from <LOADING> to <FULL>
+Aug 21 07:01:36 Leaf-3 Rib: Instance 1: %OSPF-4-OSPF_ADJACENCY_ESTABLISHED: NGB 10.0.1.1, interface 172.16.3.2 adjacency established
+Aug 21 07:01:37 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:172.16.3.1, intf:Ethernet1, type:normal) changed state from Init to Up diag None
+Aug 21 07:01:38 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.1.1, interface Et1 state change: Down to Init
+Aug 21 07:01:38 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.1.1, interface Et1 state change: Init to Exch Start
+Aug 21 07:01:38 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.1.1, interface Et1 state change: Exch Start to Exchange
+Aug 21 07:01:38 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.1.1, interface Et1 state change: Exchange to Loading
+Aug 21 07:01:38 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJACENCY_ESTABLISHED: IPv6 Neighbor 10.0.1.1, interface Et1 adjacency established
+Aug 21 07:01:38 Leaf-3 Rib: %OSPFv3-4-OSPF3_ADJCHG: IPv6 Neighbor 10.0.1.1, interface Et1 state change: Loading to Full
+Aug 21 07:01:39 Leaf-3 Bfd: %BFD-5-STATE_CHANGE: peer (vrf:default, ip:fe80::5200:ff:fed5:5dc0, intf:Ethernet1, type:normal) changed state from Init to Up diag None
+```
+
 ### Конфиги устройств:
 - [Spine-1](configs/S1.txt)
 - [Spine-2](configs/S2.txt)
