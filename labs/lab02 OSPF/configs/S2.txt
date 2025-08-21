@@ -23,6 +23,9 @@ interface Ethernet1
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
+
 !
 interface Ethernet2
    description "to-L2"
@@ -33,6 +36,9 @@ interface Ethernet2
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
+
 !
 interface Ethernet3
    description "to-L3"
@@ -43,6 +49,9 @@ interface Ethernet3
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
+
 !
 interface Ethernet4
 !

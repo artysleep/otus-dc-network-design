@@ -71,21 +71,28 @@ int e1
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
 int e2
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
 int e3
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
 int lo0
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+
 
 ```
 
@@ -109,11 +116,15 @@ int e1
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
 int e2
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   ip ospf neighbor bfd
+   bfd interval 100 min-rx 100 multiplier 3
 int lo0
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
@@ -124,6 +135,24 @@ int lo0
 ```
 
 #### Проверка
+
+##### BFD
+```cfg
+Spine-1(config-if-Et3)#do sh bfd peers 
+VRF name: default
+-----------------
+DstAddr        MyDisc    YourDisc  Interface/Transport    Type          LastUp 
+---------- ----------- ----------- -------------------- ------- ---------------
+172.16.1.2 3570060781   770442804        Ethernet1(14)  normal  08/21/25 06:37 
+172.16.2.2 1098808282  3648120412        Ethernet2(15)  normal  08/21/25 06:40 
+172.16.3.2  386283408  1802330418        Ethernet3(16)  normal  08/21/25 06:41 
+
+   LastDown            LastDiag    State
+-------------- ------------------- -----
+         NA       No Diagnostic       Up
+         NA       No Diagnostic       Up
+         NA       No Diagnostic       Up
+```
 
 ##### IPv4
 SH IP RO:
