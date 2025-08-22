@@ -1,4 +1,4 @@
-Leaf-1(config)#do sh run
+Leaf-1(config-router-ospf3)#do sh run
 ! Command: show running-config
 ! device: Leaf-1 (vEOS-lab, EOS-4.29.2F)
 !
@@ -18,21 +18,35 @@ interface Ethernet1
    description "to-S1"
    no switchport
    ip address 172.16.1.2/30
+   bfd interval 100 min-rx 100 multiplier 3
    ipv6 address 2001:db8:fab:1001::2/64
+   ip ospf neighbor bfd
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
+   ipv6 ospf bfd
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
+   isis bfd
+   isis circuit-type level-1
+   isis network point-to-point
 !
 interface Ethernet2
    description "to-S2"
    no switchport
    ip address 172.16.1.6/30
+   bfd interval 100 min-rx 100 multiplier 3
    ipv6 address 2001:db8:fab:2001::2/64
+   ip ospf neighbor bfd
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
+   ipv6 ospf bfd
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
+   isis bfd
+   isis circuit-type level-1
+   isis network point-to-point
 !
 interface Ethernet3
 !
@@ -52,6 +66,7 @@ interface Loopback0
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
 !
 interface Management1
 !
@@ -59,13 +74,22 @@ ip routing
 !
 ipv6 unicast-routing
 !
+router isis UNDERLAY
+   net 49.0001.0100.0000.0001.00
+   !
+   address-family ipv4 unicast
+   !
+   address-family ipv6 unicast
+!
 router ospf 1
    router-id 10.0.0.1
+   shutdown
    area 0.0.0.1 stub
    max-lsa 12000
 !
 ipv6 router ospf 1
    router-id 10.0.0.1
+   shutdown
    area 0.0.0.1 stub
 !
 end

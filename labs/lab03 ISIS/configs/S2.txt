@@ -1,4 +1,4 @@
-Spine-2#sh run
+Spine-2(config-router-ospf3)#do sh run
 ! Command: show running-config
 ! device: Spine-2 (vEOS-lab, EOS-4.29.2F)
 !
@@ -18,31 +18,51 @@ interface Ethernet1
    description "to-L1"
    no switchport
    ip address 172.16.1.5/30
+   bfd interval 100 min-rx 100 multiplier 3
    ipv6 address 2001:db8:fab:2001::1/64
+   ip ospf neighbor bfd
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
+   ipv6 ospf bfd
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
+   isis bfd
+   isis circuit-type level-1
+   isis network point-to-point
 !
 interface Ethernet2
    description "to-L2"
    no switchport
    ip address 172.16.2.5/30
+   bfd interval 100 min-rx 100 multiplier 3
    ipv6 address 2001:db8:fab:2002::1/64
+   ip ospf neighbor bfd
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
+   isis bfd
+   isis circuit-type level-1
+   isis network point-to-point
 !
 interface Ethernet3
    description "to-L3"
    no switchport
    ip address 172.16.3.5/30
+   bfd interval 100 min-rx 100 multiplier 3
    ipv6 address 2001:db8:fab:2003::1/64
+   ip ospf neighbor bfd
    ip ospf network point-to-point
    ip ospf area 0.0.0.1
+   ipv6 ospf bfd
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
+   isis bfd
+   isis circuit-type level-1
+   isis network point-to-point
 !
 interface Ethernet4
 !
@@ -60,6 +80,7 @@ interface Loopback0
    ip ospf area 0.0.0.1
    ipv6 ospf network point-to-point
    ipv6 ospf 1 area 0.0.0.1
+   isis enable UNDERLAY
 !
 interface Management1
 !
@@ -67,12 +88,22 @@ ip routing
 !
 ipv6 unicast-routing
 !
+router isis UNDERLAY
+   net 49.0001.0100.0000.2002.00
+   !
+   address-family ipv4 unicast
+   !
+   address-family ipv6 unicast
+!
 router ospf 1
    router-id 10.0.2.2
+   shutdown
    area 0.0.0.1 stub no-summary
    max-lsa 12000
 !
 ipv6 router ospf 1
    router-id 10.0.2.2
+   shutdown
    area 0.0.0.1 stub no-summary
 !
+end
