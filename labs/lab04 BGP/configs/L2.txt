@@ -1,0 +1,88 @@
+Leaf-2(config)#sh run
+! Command: show running-config
+! device: Leaf-2 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model ribd
+!
+hostname Leaf-2
+!
+spanning-tree mode mstp
+!
+interface Ethernet1
+   description "to-S1"
+   no switchport
+   ip address 172.16.2.2/30
+   ipv6 address 2001:db8:fab:1002::2/64
+   no ip ospf neighbor bfd
+   no ipv6 ospf bfd
+   no isis bfd
+!
+interface Ethernet2
+   description "to-S2"
+   no switchport
+   ip address 172.16.2.6/30
+   ipv6 address 2001:db8:fab:2002::2/64
+   no ip ospf neighbor bfd
+   no ipv6 ospf bfd
+   no isis bfd
+!
+interface Ethernet3
+   no ip ospf neighbor bfd
+   no ipv6 ospf bfd
+   no isis bfd
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Loopback0
+   ip address 10.0.0.2/32
+   ipv6 address 2001:db8:fab:ffff::102/128
+!
+interface Management1
+!
+ip routing
+!
+ipv6 unicast-routing
+!
+router bgp 65002
+   router-id 10.0.0.2
+   timers bgp 3 9
+   maximum-paths 2 ecmp 2
+   neighbor UNDERLAY peer group
+   neighbor UNDERLAY remote-as 65100
+   neighbor UNDERLAY out-delay 0
+   neighbor UNDERLAY bfd
+   neighbor UNDERLAY password 7 B1vgUQU1I6pc9Hs7T+HOPQ==
+   neighbor UNDERLAY_V6 peer group
+   neighbor UNDERLAY_V6 remote-as 65100
+   neighbor UNDERLAY_V6 out-delay 0
+   neighbor UNDERLAY_V6 bfd
+   neighbor 172.16.2.1 peer group UNDERLAY
+   neighbor 172.16.2.5 peer group UNDERLAY
+   neighbor 2001:db8:fab:1002::1 peer group UNDERLAY_V6
+   neighbor 2001:db8:fab:2002::1 peer group UNDERLAY_V6
+   !
+   address-family ipv4
+      neighbor 172.16.2.1 activate
+      neighbor 172.16.2.5 activate
+      network 10.0.0.2/32
+   !
+   address-family ipv6
+      neighbor 2001:db8:fab:1002::1 activate
+      neighbor 2001:db8:fab:2002::1 activate
+      network 2001:db8:fab:ffff::102/128
+!
+end
