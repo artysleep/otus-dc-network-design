@@ -126,6 +126,7 @@ ipv6 unicast-routing
 router bgp 65100
    router-id 10.0.1.1
    timers bgp 3 9
+   no bgp default ipv4-unicast
    neighbor EVPN peer group
    neighbor EVPN remote-as 65100
    neighbor EVPN out-delay 0
@@ -138,9 +139,7 @@ router bgp 65100
    neighbor 10.0.0.3 peer group EVPN
    !
    address-family evpn
-      neighbor 10.0.0.1 activate
-      neighbor 10.0.0.2 activate
-      neighbor 10.0.0.3 activate
+      neighbor EVPN activate
 !
 router ospf 1
    router-id 10.0.1.1
@@ -228,6 +227,7 @@ ipv6 unicast-routing
 !
 router bgp 65100
    router-id 10.0.0.1
+   no bgp default ipv4-unicast
    timers bgp 3 9
    maximum-paths 2 ecmp 2
    neighbor EVPN peer group
@@ -245,8 +245,7 @@ router bgp 65100
       redistribute learned
    !
    address-family evpn
-      neighbor 10.0.1.1 activate
-      neighbor 10.0.2.2 activate
+      neighbor EVPN activate
 !
 router ospf 1
    router-id 10.0.0.1
@@ -299,6 +298,16 @@ AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Li
                                  10.0.0.2              -       100     0       i Or-ID: 10.0.0.2 C-LST: 10.0.1.1 
  *  ec    RD: 10.0.0.2:10 imet 10.0.0.2
                                  10.0.0.2              -       100     0       i Or-ID: 10.0.0.2 C-LST: 10.0.2.2 
+
+Total Remote Mac Addresses for this criterion: 1
+Leaf-1(config-router-bgp-af)#show vxlan address-table
+          Vxlan Mac Address Table
+----------------------------------------------------------------------
+
+VLAN  Mac Address     Type      Prt  VTEP             Moves   Last Move
+----  -----------     ----      ---  ----             -----   ---------
+  10  0050.7966.6807  EVPN      Vx1  10.0.0.2         1       0:00:30 ago
+Total Remote Mac Addresses for this criterion: 1
 
 ```
 
