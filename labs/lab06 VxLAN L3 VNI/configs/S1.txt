@@ -1,0 +1,107 @@
+Spine-1#sh run
+! Command: show running-config
+! device: Spine-1 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Spine-1
+!
+spanning-tree mode mstp
+!
+interface Ethernet1
+   description "to-L1"
+   no switchport
+   ip address 172.16.1.1/30
+   ipv6 address 2001:db8:fab:1001::1/64
+   ip ospf neighbor bfd
+   ip ospf network point-to-point
+   ip ospf area 0.0.0.1
+   ipv6 ospf bfd
+   ipv6 ospf network point-to-point
+   ipv6 ospf 1 area 0.0.0.1
+   no isis bfd
+!
+interface Ethernet2
+   description "to-L2"
+   no switchport
+   ip address 172.16.2.1/30
+   ipv6 address 2001:db8:fab:1002::1/64
+   ip ospf neighbor bfd
+   ip ospf network point-to-point
+   ip ospf area 0.0.0.1
+   ipv6 ospf bfd
+   ipv6 ospf network point-to-point
+   ipv6 ospf 1 area 0.0.0.1
+   no isis bfd
+!
+interface Ethernet3
+   description "to-L3"
+   no switchport
+   ip address 172.16.3.1/30
+   ipv6 address 2001:db8:fab:1003::1/64
+   ip ospf neighbor bfd
+   ip ospf network point-to-point
+   ip ospf area 0.0.0.1
+   ipv6 ospf bfd
+   ipv6 ospf network point-to-point
+   ipv6 ospf 1 area 0.0.0.1
+   no isis bfd
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Loopback0
+   ip address 10.0.1.1/32
+   ipv6 address 2001:db8:fab:ffff::1/128
+   ip ospf area 0.0.0.1
+   ipv6 ospf 1 area 0.0.0.1
+!
+interface Management1
+!
+ip routing
+!
+ipv6 unicast-routing
+!
+router bgp 65100
+   router-id 10.0.1.1
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   neighbor EVPN peer group
+   neighbor EVPN remote-as 65100
+   neighbor EVPN out-delay 0
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN bfd
+   neighbor EVPN route-reflector-client
+   neighbor EVPN send-community extended
+   neighbor 10.0.0.1 peer group EVPN
+   neighbor 10.0.0.2 peer group EVPN
+   neighbor 10.0.0.3 peer group EVPN
+   !
+   address-family evpn
+      neighbor 10.0.0.1 activate
+      neighbor 10.0.0.2 activate
+      neighbor 10.0.0.3 activate
+!
+router ospf 1
+   router-id 10.0.1.1
+   area 0.0.0.1 stub no-summary
+   max-lsa 12000
+!
+ipv6 router ospf 1
+   router-id 10.0.1.1
+   area 0.0.0.1 stub no-summary
+!
+end

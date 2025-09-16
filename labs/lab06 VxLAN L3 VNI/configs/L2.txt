@@ -1,0 +1,124 @@
+Leaf-2(config-router-bgp)#sh run
+! Command: show running-config
+! device: Leaf-2 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Leaf-2
+!
+spanning-tree mode mstp
+!
+vlan 20
+   name vl20
+!
+vrf instance VRF1
+!
+interface Ethernet1
+   description "to-S1"
+   no switchport
+   ip address 172.16.2.2/30
+   ipv6 address 2001:db8:fab:1002::2/64
+   ip ospf neighbor bfd
+   ip ospf network point-to-point
+   ip ospf area 0.0.0.1
+   ipv6 ospf bfd
+   ipv6 ospf network point-to-point
+   ipv6 ospf 1 area 0.0.0.1
+   no isis bfd
+!
+interface Ethernet2
+   description "to-S2"
+   no switchport
+   ip address 172.16.2.6/30
+   ipv6 address 2001:db8:fab:2002::2/64
+   ip ospf neighbor bfd
+   ip ospf network point-to-point
+   ip ospf area 0.0.0.1
+   ipv6 ospf bfd
+   ipv6 ospf network point-to-point
+   ipv6 ospf 1 area 0.0.0.1
+   no isis bfd
+!
+interface Ethernet3
+   no ip ospf neighbor bfd
+   no ipv6 ospf bfd
+   no isis bfd
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+   switchport access vlan 20
+!
+interface Loopback0
+   ip address 10.0.0.2/32
+   ipv6 address 2001:db8:fab:ffff::102/128
+   ip ospf area 0.0.0.1
+   ipv6 ospf 1 area 0.0.0.1
+!
+interface Management1
+!
+interface Vlan20
+   vrf VRF1
+   ip address virtual 192.168.20.254/24
+!
+interface Vxlan1
+   vxlan source-interface Loopback0
+   vxlan udp-port 4789
+   vxlan vlan 20 vni 10020
+   vxlan vrf VRF1 vni 100999
+!
+ip routing
+ip routing vrf VRF1
+!
+ipv6 unicast-routing
+!
+router bgp 65100
+   router-id 10.0.0.2
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   maximum-paths 2 ecmp 2
+   neighbor EVPN peer group
+   neighbor EVPN remote-as 65100
+   neighbor EVPN out-delay 0
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN bfd
+   neighbor EVPN send-community extended
+   neighbor 10.0.1.1 peer group EVPN
+   neighbor 10.0.2.2 peer group EVPN
+   !
+   vlan 20
+      rd auto
+      route-target both 65100:10020
+      redistribute learned
+   !
+   address-family evpn
+      neighbor 10.0.1.1 activate
+      neighbor 10.0.2.2 activate
+   !
+   vrf VRF1
+      rd 2:100999
+      route-target import evpn 65100:100999
+      route-target export evpn 65100:100999
+!
+router ospf 1
+   router-id 10.0.0.2
+   area 0.0.0.1 stub
+   max-lsa 12000
+!
+ipv6 router ospf 1
+   router-id 10.0.0.2
+   area 0.0.0.1 stub
+!
+end
