@@ -1,0 +1,56 @@
+MH-SERVER(config)#sh run
+! Command: show running-config
+! device: MH-SERVER (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model ribd
+!
+hostname MH-SERVER
+!
+spanning-tree mode mstp
+!
+vlan 50
+   name vl50
+!
+vlan 60
+!
+interface Port-Channel1
+   description "to L4-MH+L5-MH"
+   switchport trunk allowed vlan 50
+   switchport mode trunk
+!
+interface Ethernet1
+   description "to-L5-MH.eth8"
+   channel-group 1 mode active
+!
+interface Ethernet2
+   description "to-L4-MH.eth8"
+   channel-group 1 mode active
+!
+interface Ethernet3
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Management1
+!
+interface Vlan50
+   ip address 192.168.50.1/24
+!
+no ip routing
+!
+ip route 0.0.0.0/0 192.168.50.254
+!
+end

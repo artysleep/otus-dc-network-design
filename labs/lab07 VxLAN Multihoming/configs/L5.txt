@@ -1,0 +1,121 @@
+Leaf-5-MH(config-if-Et8)#sh run
+! Command: show running-config
+! device: Leaf-5-MH (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Leaf-5-MH
+!
+spanning-tree mode mstp
+!
+vlan 50
+   name vl50
+!
+vrf instance VRF1
+!
+interface Port-Channel1
+   description to-MH-SERVER
+   switchport trunk allowed vlan 50
+   switchport mode trunk
+   !
+   evpn ethernet-segment
+      identifier 0000:0000:0000:0000:4501
+      designated-forwarder election algorithm preference 100
+      route-target import 00:00:00:00:45:01
+   lacp system-id 0000.0000.4501
+   spanning-tree portfast
+!
+interface Ethernet1
+   description "to-S1"
+   mtu 9214
+   no switchport
+   ip address 172.16.5.2/30
+   ipv6 address 2001:db8:fab:1005::2/64
+!
+interface Ethernet2
+   description "to-S2"
+   mtu 9214
+   no switchport
+   ip address 172.16.5.6/30
+   ipv6 address 2001:db8:fab:2005::2/64
+!
+interface Ethernet3
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+   description to-MH-SERVER-Eth2
+   channel-group 1 mode active
+   lacp timer fast
+!
+interface Loopback0
+   ip address 10.0.0.5/32
+   ipv6 address 2001:db8:fab:ffff::105/128
+!
+interface Management1
+!
+interface Vlan50
+   vrf VRF1
+   ip address virtual 192.168.50.254/24
+!
+interface Vxlan1
+   vxlan source-interface Loopback0
+   vxlan udp-port 4789
+   vxlan vlan 50 vni 10050
+   vxlan vrf VRF1 vni 100999
+!
+ip virtual-router mac-address de:ad:de:ad:de:ad
+!
+ip routing
+ip routing vrf VRF1
+!
+ipv6 unicast-routing
+!
+router bgp 65005
+   router-id 10.0.0.5
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   maximum-paths 2 ecmp 2
+   neighbor EVPN peer group
+   neighbor EVPN remote-as 65100
+   neighbor EVPN next-hop-unchanged
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN ebgp-multihop 3
+   neighbor EVPN send-community extended
+   neighbor UNDERLAY peer group
+   neighbor UNDERLAY remote-as 65100
+   neighbor 10.0.1.1 peer group EVPN
+   neighbor 10.0.2.2 peer group EVPN
+   neighbor 172.16.5.1 peer group UNDERLAY
+   neighbor 172.16.5.5 peer group UNDERLAY
+   !
+   vlan 50
+      rd auto
+      route-target both 65005:10050
+      redistribute learned
+   !
+   address-family evpn
+      neighbor EVPN activate
+   !
+   address-family ipv4
+      neighbor UNDERLAY activate
+      network 10.0.0.5/32
+   !
+   vrf VRF1
+      rd 5:100999
+      route-target import evpn 999:100999
+      route-target export evpn 999:100999
+!
+end
