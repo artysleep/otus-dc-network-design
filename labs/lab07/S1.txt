@@ -1,0 +1,88 @@
+Spine-1(config-if-Et3)#sh run
+! Command: show running-config
+! device: Spine-1 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Spine-1
+!
+spanning-tree mode mstp
+!
+interface Ethernet1
+   description "to-L1"
+   mtu 9214
+   no switchport
+   ip address 172.16.1.1/30
+   ipv6 address 2001:db8:fab:1001::1/64
+!
+interface Ethernet2
+   description "to-L2"
+   mtu 9214
+   no switchport
+   ip address 172.16.2.1/30
+   ipv6 address 2001:db8:fab:1002::1/64
+!
+interface Ethernet3
+   description "to-L3"
+   mtu 9214
+   no switchport
+   ip address 172.16.3.1/30
+   ipv6 address 2001:db8:fab:1003::1/64
+!
+interface Ethernet4
+   mtu 9214
+!
+interface Ethernet5
+   mtu 9214
+!
+interface Ethernet6
+   mtu 9214
+!
+interface Ethernet7
+   mtu 9214
+!
+interface Ethernet8
+   shutdown
+   mtu 9214
+!
+interface Loopback0
+   ip address 10.0.1.1/32
+   ipv6 address 2001:db8:fab:ffff::1/128
+!
+interface Management1
+!
+ip routing
+!
+ipv6 unicast-routing
+!
+peer-filter LEAFS
+   10 match as-range 65000-65100 result accept
+!
+router bgp 65100
+   router-id 10.0.1.1
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   bgp listen range 10.0.0.0/16 peer-group EVPN peer-filter LEAFS
+   bgp listen range 172.16.0.0/16 peer-group UNDERLAY peer-filter LEAFS
+   neighbor EVPN peer group
+   neighbor EVPN next-hop-unchanged
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN ebgp-multihop 3
+   neighbor EVPN send-community extended
+   neighbor UNDERLAY peer group
+   !
+   address-family evpn
+      neighbor EVPN activate
+   !
+   address-family ipv4
+      neighbor UNDERLAY activate
+      network 10.0.1.1/32
+!
+end
+Spine-1(config-if-Et3)#

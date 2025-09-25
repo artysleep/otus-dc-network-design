@@ -1,0 +1,127 @@
+Leaf-3(config-if-Et2)#sh run
+! Command: show running-config
+! device: Leaf-3 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Leaf-3
+!
+spanning-tree mode mstp
+!
+vlan 30
+   name vl30
+!
+vlan 40
+   name vl40
+!
+vrf instance VRF1
+!
+interface Ethernet1
+   description "to-S1"
+   mtu 9214
+   no switchport
+   ip address 172.16.3.2/30
+   ipv6 address 2001:db8:fab:1003::2/64
+!
+interface Ethernet2
+   description "to-S2"
+   mtu 9214
+   no switchport
+   ip address 172.16.3.6/30
+   ipv6 address 2001:db8:fab:2003::2/64
+!
+interface Ethernet3
+!
+interface Ethernet4
+   mtu 9214
+!
+interface Ethernet5
+   mtu 9214
+!
+interface Ethernet6
+   mtu 9214
+!
+interface Ethernet7
+   mtu 9214
+   switchport access vlan 40
+!
+interface Ethernet8
+   mtu 9214
+   switchport access vlan 30
+!
+interface Loopback0
+   ip address 10.0.0.3/32
+   ipv6 address 2001:db8:fab:ffff::103/128
+!
+interface Management1
+!
+interface Vlan30
+   vrf VRF1
+   ip address virtual 192.168.30.254/24
+!
+interface Vlan40
+   vrf VRF1
+   ip address virtual 192.168.40.254/24
+!
+interface Vxlan1
+   vxlan source-interface Loopback0
+   vxlan udp-port 4789
+   vxlan vlan 30 vni 10030
+   vxlan vlan 40 vni 10040
+   vxlan vrf VRF1 vni 100999
+!
+ip virtual-router mac-address de:ad:de:ad:de:ad
+!
+ip routing
+ip routing vrf VRF1
+!
+ipv6 unicast-routing
+!
+router bgp 65003
+   router-id 10.0.0.3
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   maximum-paths 2 ecmp 2
+   neighbor EVPN peer group
+   neighbor EVPN remote-as 65100
+   neighbor EVPN next-hop-unchanged
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN ebgp-multihop 3
+   neighbor EVPN send-community extended
+   neighbor UNDERLAY peer group
+   neighbor UNDERLAY remote-as 65100
+   neighbor 10.0.1.1 peer group EVPN
+   neighbor 10.0.2.2 peer group EVPN
+   neighbor 172.16.3.1 peer group UNDERLAY
+   neighbor 172.16.3.5 peer group UNDERLAY
+   !
+   vlan 30
+      rd auto
+      route-target both 65003:10030
+      redistribute learned
+   !
+   vlan 40
+      rd auto
+      route-target both 65003:10040
+      redistribute learned
+   !
+   address-family evpn
+      neighbor EVPN activate
+   !
+   address-family ipv4
+      neighbor UNDERLAY activate
+      network 10.0.0.3/32
+   !
+   vrf VRF1
+      rd 3:100999
+      route-target import evpn 999:100999
+      route-target export evpn 999:100999
+!
+end
+Leaf-3(config-if-Et2)#

@@ -17,7 +17,6 @@ spanning-tree mode mstp
 vlan 50
    name vl50
 !
-vlan 60
 !
 interface Port-Channel1
    description "to L4-MH+L5-MH"

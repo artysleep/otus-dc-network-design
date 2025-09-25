@@ -1,13 +1,15 @@
-# VxLAN. EVPN L3
+# VXLAN. Multihoming
 
 ### Цели:
-- ##### Настроить маршрутизацию в рамках Overlay между клиентами.
-
+- ##### Настроить отказоустойчивое подключение клиентов с использованием EVPN Multihoming.
 
 ### Описание/Пошаговая инструкция выполнения домашнего задания:
-- ##### Настроить каждого клиента в своем VNI
-- ##### Настроить маршрутизацию между клиентами.
-- ##### Зафиксировать в документации - план работы, адресное пространство, схему сети, конфигурацию устройств
+- ##### Подключите клиентов 2-я линками к различным Leaf
+- ##### Настроите агрегированный канал со стороны клиента
+- ##### Настроите multihoming для работы в Overlay сети. Если используете Cisco NXOS - vPC, если иной вендор - то ESI LAG (либо MC-LAG с поддержкой VXLAN)
+- ##### Зафиксируете в документации - план работы, адресное пространство, схему сети, конфигурацию устройств
+- ##### Опционально - протестировать отказоустойчивость - убедиться, что связнность не теряется при отключении одного из линков
+
 
 ![Схема сети с изображением AS ](images/image2.png)
 
@@ -23,6 +25,8 @@
 | Leaf-1 | 10.0.0.1 |
 | Leaf-2 | 10.0.0.2 |
 | Leaf-3 | 10.0.0.3 |
+| Leaf-4 | 10.0.0.4 |
+| Leaf-5 | 10.0.0.5 |
 
 ##### Общая таблица связей:
 | Связь | Подсеть | Адрес на Spine           | Адрес на Leaf           |
@@ -49,106 +53,74 @@
 
 ##### Пример настроек:
 
-Пример настроек со Leaf-1:
-```cfg
-vlan 10
-   name vl10
 
-vrf instance VRF1
+Пример настроек с Leaf-4-MH:
+```cfg
+interface Port-Channel1
+   description to-MH-SERVER
+   switchport trunk allowed vlan 50
+   switchport mode trunk
+   
+   evpn ethernet-segment
+      identifier 0000:0000:0000:0000:4501
+      designated-forwarder election algorithm preference 90
+      route-target import 00:00:00:00:45:01
+   lacp system-id 0000.0000.4501
+   spanning-tree portfast
 
 interface Ethernet8
-   switchport access vlan 10
+   description to-MH-SERVER-Eth1
+   channel-group 1 mode active
+   lacp timer fast
 
-interface Vlan10
+interface Vlan50
    vrf VRF1
-   ip address virtual 192.168.10.254/24
-
-interface Vxlan1
-   vxlan source-interface Loopback0
-   vxlan udp-port 4789
-   vxlan vlan 10 vni 10010
-   vxlan vrf VRF1 vni 100999
-
-ip routing
-ip routing vrf VRF1
-
-
-router bgp 65100
-   router-id 10.0.0.1
-   no bgp default ipv4-unicast
-   timers bgp 3 9
-   maximum-paths 2 ecmp 2
-   neighbor EVPN peer group
-   neighbor EVPN remote-as 65100
-   neighbor EVPN out-delay 0
-   neighbor EVPN update-source Loopback0
-   neighbor EVPN bfd
-   neighbor EVPN send-community extended
-   neighbor 10.0.1.1 peer group EVPN
-   neighbor 10.0.2.2 peer group EVPN
-   !
-   vlan 10
-      rd auto
-      route-target both 65100:10010
-      redistribute learned
-   !
-   address-family evpn
-      neighbor EVPN activate
-   !
-   vrf VRF1
-      rd 1:100999
-      route-target import evpn 65100:100999
-      route-target export evpn 65100:100999
-
+   ip address virtual 192.168.50.254/24
 ```
 
-Пример настроек с Leaf-2:
+Пример настроек со Leaf-4-MH:
 ```cfg
-vrf instance VRF1
-
-ip routing vrf VRF1
-
-interface Vlan20
-   vrf VRF1
-   ip address virtual 192.168.20.254/24
-
-interface Vxlan1
-vxlan vrf VRF1 vni 100999
-
-router bgp 65100
-vrf VRF1
-      rd 2:100999
-      route-target import evpn 65100:100999
-      route-target export evpn 65100:100999
-```
-
-Пример настроек с Leaf-3:
-```cfg
-vrf instance VRF1
-
-ip routing vrf VRF1
-	  
-interface Vlan30
-   vrf VRF1
-   ip address virtual 192.168.30.254/24
+interface Port-Channel1
+   description to-MH-SERVER
+   switchport trunk allowed vlan 50
+   switchport mode trunk
    
-interface Vlan40
+   evpn ethernet-segment
+      identifier 0000:0000:0000:0000:4501
+      designated-forwarder election algorithm preference 100
+      route-target import 00:00:00:00:45:01
+   lacp system-id 0000.0000.4501
+   spanning-tree portfast
+
+interface Ethernet8
+   description to-MH-SERVER-Eth2
+   channel-group 1 mode active
+   lacp timer fast
+
+interface Vlan50
    vrf VRF1
-   ip address virtual 192.168.40.254/24
+   ip address virtual 192.168.50.254/24
+```
 
-interface Vxlan1
-vxlan vrf VRF1 vni 100999
 
-router bgp 65100
-vrf VRF1
-      rd 3:100999
-      route-target import evpn 65100:100999
-      route-target export evpn 65100:100999
+
+Пример настроек с MH-Server:
+```cfg
+interface Port-Channel1
+   description "to L4-MH+L5-MH"
+   switchport trunk allowed vlan 50
+   switchport mode trunk
+!
+interface Ethernet1
+   description "to-L5-MH.eth8"
+   channel-group 1 mode active
+!
+interface Ethernet2
+   description "to-L4-MH.eth8"
+   channel-group 1 mode active
 ```
 
 #### Проверка
-
-
 ```cfg
 Leaf-1#sh bgp evpn
 BGP routing table information for VRF default
