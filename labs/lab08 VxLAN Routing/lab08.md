@@ -443,6 +443,242 @@ VPC1> ping 192.168.20.1
 
 ![ Логи на Check Point ](images/image4.png)
 
+### UPD
+
+После отправки ДЗ на доработку, лабораторная была переделана следующим образом, VLAN 10 и VLAN 30 - это зона безопасности VRF-A, VLAN 20 и VLAN 40 - это зона безопасности VRF-B:
+
+| VLAN | VRF | 
+|---------------|---------------|
+| VLAN 10 | VRF-A | 
+| VLAN 20 | VRF-B | 
+| VLAN 30 | VRF-A |
+| VLAN 40 | VRF-B |
+
+Переработанные интерфейсы на Check Point:
+
+![ Интерфейсы Check Point ](images/image5.png)
+![ Переработанные правила на Check Point ](images/image3.png)
+
+Как видно по правилам, если бы трафик между VPC1 и VPC3 проходил через экран, то происходила бы блокировка, однако:
+```cfg
+VPC1> ping 8.8.8.8
+
+84 bytes from 8.8.8.8 icmp_seq=1 ttl=107 time=101.590 ms
+84 bytes from 8.8.8.8 icmp_seq=2 ttl=107 time=20.978 ms
+84 bytes from 8.8.8.8 icmp_seq=3 ttl=107 time=21.759 ms
+84 bytes from 8.8.8.8 icmp_seq=4 ttl=107 time=24.545 ms
+84 bytes from 8.8.8.8 icmp_seq=5 ttl=107 time=21.936 ms
+^C
+VPC1> ping 192.168.30.1
+
+84 bytes from 192.168.30.1 icmp_seq=1 ttl=63 time=103.165 ms
+84 bytes from 192.168.30.1 icmp_seq=2 ttl=63 time=18.275 ms
+84 bytes from 192.168.30.1 icmp_seq=3 ttl=63 time=16.058 ms
+84 bytes from 192.168.30.1 icmp_seq=4 ttl=63 time=14.130 ms
+84 bytes from 192.168.30.1 icmp_seq=5 ttl=63 time=14.025 ms
+
+VPC1> ping 192.168.40.1
+
+192.168.40.1 icmp_seq=1 timeout
+192.168.40.1 icmp_seq=2 timeout
+192.168.40.1 icmp_seq=3 timeout
+192.168.40.1 icmp_seq=4 timeout
+192.168.40.1 icmp_seq=5 timeout
+
+VPC1> ping 192.168.20.1
+
+84 bytes from 192.168.20.1 icmp_seq=1 ttl=60 time=104.181 ms
+84 bytes from 192.168.20.1 icmp_seq=2 ttl=60 time=25.916 ms
+84 bytes from 192.168.20.1 icmp_seq=3 ttl=60 time=25.869 ms
+84 bytes from 192.168.20.1 icmp_seq=4 ttl=60 time=26.415 ms
+84 bytes from 192.168.20.1 icmp_seq=5 ttl=60 time=26.086 ms
+```
+
+В логах межсетевого экрана при этом всем нет даже записей о прохождении этого трафика между VPC1 и VPC3:
+![ Логи Check Point ](images/image7.png)
+
+Ну и проверка маршрутов на BL:
+```cfg
+Border-Leaf(config-vlan-500)#sh bgp evpn
+BGP routing table information for VRF default
+Router identifier 10.0.0.4, local AS number 65004
+Route status codes: * - valid, > - active, S - Stale, E - ECMP head, e - ECMP
+                    c - Contributing to ECMP, % - Pending BGP convergence
+Origin codes: i - IGP, e - EGP, ? - incomplete
+AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Link Local Nexthop
+
+          Network                Next Hop              Metric  LocPref Weight  Path
+ * >Ec    RD: 65001:10010 mac-ip 0050.7966.6806
+                                 10.0.0.1              -       100     0       65100 65001 i
+ *  ec    RD: 65001:10010 mac-ip 0050.7966.6806
+                                 10.0.0.1              -       100     0       65100 65001 i
+ * >Ec    RD: 65002:10020 mac-ip 0050.7966.6807
+                                 10.0.0.2              -       100     0       65100 65002 i
+ *  ec    RD: 65002:10020 mac-ip 0050.7966.6807
+                                 10.0.0.2              -       100     0       65100 65002 i
+ * >Ec    RD: 65001:10010 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ *  ec    RD: 65001:10010 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ * >Ec    RD: 65001:10020 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ *  ec    RD: 65001:10020 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ * >Ec    RD: 65001:10030 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ *  ec    RD: 65001:10030 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ * >Ec    RD: 65001:10040 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ *  ec    RD: 65001:10040 imet 10.0.0.1
+                                 10.0.0.1              -       100     0       65100 65001 i
+ * >Ec    RD: 65002:10010 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ *  ec    RD: 65002:10010 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ * >Ec    RD: 65002:10020 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ *  ec    RD: 65002:10020 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ * >Ec    RD: 65002:10030 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ *  ec    RD: 65002:10030 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ * >Ec    RD: 65002:10040 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ *  ec    RD: 65002:10040 imet 10.0.0.2
+                                 10.0.0.2              -       100     0       65100 65002 i
+ * >Ec    RD: 65003:10010 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ *  ec    RD: 65003:10010 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ * >Ec    RD: 65003:10020 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ *  ec    RD: 65003:10020 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ * >Ec    RD: 65003:10030 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ *  ec    RD: 65003:10030 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ * >Ec    RD: 65003:10040 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ *  ec    RD: 65003:10040 imet 10.0.0.3
+                                 10.0.0.3              -       100     0       65100 65003 i
+ * >      RD: 65004:10010 imet 10.0.0.4
+                                 -                     -       -       0       i
+ * >      RD: 65004:10020 imet 10.0.0.4
+                                 -                     -       -       0       i
+ * >      RD: 65004:10030 imet 10.0.0.4
+                                 -                     -       -       0       i
+ * >      RD: 65004:10040 imet 10.0.0.4
+                                 -                     -       -       0       i
+ * >      RD: 10.0.0.4:50000 ip-prefix 0.0.0.0/0
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50001 ip-prefix 0.0.0.0/0
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50000 ip-prefix 172.16.100.0/30
+                                 -                     -       -       0       i
+ *        RD: 10.0.0.4:50000 ip-prefix 172.16.100.0/30
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50001 ip-prefix 172.16.100.0/30
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50000 ip-prefix 172.16.200.0/30
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50001 ip-prefix 172.16.200.0/30
+                                 -                     -       -       0       i
+ *        RD: 10.0.0.4:50001 ip-prefix 172.16.200.0/30
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50000 ip-prefix 192.168.10.0/24
+                                 -                     -       -       0       i
+ * >      RD: 10.0.0.4:50001 ip-prefix 192.168.20.0/24
+                                 -                     -       -       0       i
+ * >      RD: 10.0.0.4:50000 ip-prefix 192.168.30.0/24
+                                 -                     -       -       0       i
+ * >      RD: 10.0.0.4:50001 ip-prefix 192.168.40.0/24
+                                 -                     -       -       0       i
+ * >      RD: 10.0.0.4:50000 ip-prefix 192.168.88.0/24
+                                 -                     -       100     0       65500 i
+ * >      RD: 10.0.0.4:50001 ip-prefix 192.168.88.0/24
+                                 -                     -       100     0       65500 i
+
+
+
+Border-Leaf(config-vlan-500)#sh ip ro vrf all
+
+VRF: default
+Codes: C - connected, S - static, K - kernel,
+       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
+       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
+       N2 - OSPF NSSA external type2, B - Other BGP Routes,
+       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
+       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
+       A O - OSPF Summary, NG - Nexthop Group Static Route,
+       V - VXLAN Control Service, M - Martian,
+       DH - DHCP client installed default route,
+       DP - Dynamic Policy Route, L - VRF Leaked,
+       G  - gRIBI, RC - Route Cache Route
+
+Gateway of last resort is not set
+
+ B E      10.0.0.1/32 [200/0] via 172.16.4.1, Ethernet1
+                              via 172.16.4.5, Ethernet2
+ B E      10.0.0.2/32 [200/0] via 172.16.4.1, Ethernet1
+                              via 172.16.4.5, Ethernet2
+ B E      10.0.0.3/32 [200/0] via 172.16.4.1, Ethernet1
+                              via 172.16.4.5, Ethernet2
+ C        10.0.0.4/32 is directly connected, Loopback0
+ B E      10.0.1.1/32 [200/0] via 172.16.4.1, Ethernet1
+ B E      10.0.2.2/32 [200/0] via 172.16.4.5, Ethernet2
+ C        172.16.4.0/30 is directly connected, Ethernet1
+ C        172.16.4.4/30 is directly connected, Ethernet2
+
+
+VRF: VRF-A
+Codes: C - connected, S - static, K - kernel,
+       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
+       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
+       N2 - OSPF NSSA external type2, B - Other BGP Routes,
+       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
+       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
+       A O - OSPF Summary, NG - Nexthop Group Static Route,
+       V - VXLAN Control Service, M - Martian,
+       DH - DHCP client installed default route,
+       DP - Dynamic Policy Route, L - VRF Leaked,
+       G  - gRIBI, RC - Route Cache Route
+
+Gateway of last resort:
+ B E      0.0.0.0/0 [200/0] via 172.16.100.1, Vlan500
+
+ C        172.16.100.0/30 is directly connected, Vlan500
+ B E      172.16.200.0/30 [200/0] via 172.16.100.1, Vlan500
+ C        192.168.10.0/24 is directly connected, Vlan10
+ C        192.168.30.0/24 is directly connected, Vlan30
+ B E      192.168.88.0/24 [200/0] via 172.16.100.1, Vlan500
+
+
+VRF: VRF-B
+Codes: C - connected, S - static, K - kernel,
+       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
+       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
+       N2 - OSPF NSSA external type2, B - Other BGP Routes,
+       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
+       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
+       A O - OSPF Summary, NG - Nexthop Group Static Route,
+       V - VXLAN Control Service, M - Martian,
+       DH - DHCP client installed default route,
+       DP - Dynamic Policy Route, L - VRF Leaked,
+       G  - gRIBI, RC - Route Cache Route
+
+Gateway of last resort:
+ B E      0.0.0.0/0 [200/0] via 172.16.200.1, Vlan501
+
+ B E      172.16.100.0/30 [200/0] via 172.16.200.1, Vlan501
+ C        172.16.200.0/30 is directly connected, Vlan501
+ C        192.168.20.0/24 is directly connected, Vlan20
+ C        192.168.40.0/24 is directly connected, Vlan40
+ B E      192.168.88.0/24 [200/0] via 172.16.200.1, Vlan501
+```
+
 ### Конфиги устройств:
 - [Spine-1](configs/S1.txt)
 - [Spine-2](configs/S2.txt)

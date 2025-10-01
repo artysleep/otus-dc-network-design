@@ -1,4 +1,4 @@
-Border-Leaf#sh run
+Border-Leaf(config-vlan-500)#do sh run
 ! Command: show running-config
 ! device: Border-Leaf (vEOS-lab, EOS-4.29.2F)
 !
@@ -27,9 +27,14 @@ vlan 40
    name NET40
 !
 vlan 500
-   name FIREWALL
+   name FIREWALL-ZONE-A
+!
+vlan 501
+   name FIREWALL-ZONE-B
 !
 vrf instance VRF-A
+!
+vrf instance VRF-B
 !
 interface Port-Channel1
    lacp system-id 0000.0000.4501
@@ -60,7 +65,8 @@ interface Ethernet7
 !
 interface Ethernet8
    description "to-Firewall"
-   switchport trunk allowed vlan 10,20,30,40,500
+   mtu 9214
+   switchport trunk allowed vlan 10,20,30,40,500-501
    switchport mode trunk
 !
 interface Loopback0
@@ -70,20 +76,36 @@ interface Loopback0
 interface Management1
 !
 interface Vlan10
+   description VLAN10-VRF-A
    vrf VRF-A
+   ip address 192.168.10.104/24
+   ip virtual-router address 192.168.10.254/24
 !
 interface Vlan20
-   vrf VRF-A
+   description VLAN20-VRF-B
+   vrf VRF-B
+   ip address 192.168.20.104/24
+   ip virtual-router address 192.168.20.254/24
 !
 interface Vlan30
+   description VLAN30-VRF-A
    vrf VRF-A
+   ip address 192.168.30.104/24
+   ip virtual-router address 192.168.30.254/24
 !
 interface Vlan40
-   vrf VRF-A
+   description VLAN30-VRF-B
+   vrf VRF-B
+   ip address 192.168.40.104/24
+   ip virtual-router address 192.168.40.254/24
 !
 interface Vlan500
    vrf VRF-A
    ip address 172.16.100.2/30
+!
+interface Vlan501
+   vrf VRF-B
+   ip address 172.16.200.2/30
 !
 interface Vxlan1
    vxlan source-interface Loopback0
@@ -93,12 +115,14 @@ interface Vxlan1
    vxlan vlan 30 vni 10030
    vxlan vlan 40 vni 10040
    vxlan vrf VRF-A vni 50000
+   vxlan vrf VRF-B vni 50001
    vxlan learn-restrict any
 !
 ip virtual-router mac-address de:ad:de:ad:de:ad
 !
 ip routing
 ip routing vrf VRF-A
+ip routing vrf VRF-B
 !
 ipv6 unicast-routing
 !
@@ -157,6 +181,18 @@ router bgp 65004
       !
       address-family ipv4
          neighbor 172.16.100.1 activate
+         redistribute connected
+   !
+   vrf VRF-B
+      rd 10.0.0.4:50001
+      route-target import evpn 50001:50001
+      route-target export evpn 50001:50001
+      router-id 172.16.200.2
+      timers bgp 3 9
+      neighbor 172.16.200.1 remote-as 65500
+      !
+      address-family ipv4
+         neighbor 172.16.200.1 activate
          redistribute connected
 !
 end
