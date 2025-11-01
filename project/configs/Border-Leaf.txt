@@ -1,0 +1,198 @@
+Border-Leaf(config-vlan-500)#do sh run
+! Command: show running-config
+! device: Border-Leaf (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Border-Leaf
+!
+spanning-tree mode mstp
+!
+vlan 10
+   name NET10
+!
+vlan 20
+   name NET20
+!
+vlan 30
+   name NET30
+!
+vlan 40
+   name NET40
+!
+vlan 500
+   name FIREWALL-ZONE-A
+!
+vlan 501
+   name FIREWALL-ZONE-B
+!
+vrf instance VRF-A
+!
+vrf instance VRF-B
+!
+interface Port-Channel1
+   lacp system-id 0000.0000.4501
+!
+interface Ethernet1
+   description "to-S1"
+   mtu 9214
+   no switchport
+   ip address 172.16.4.2/30
+   ipv6 address 2001:db8:fab:1004::2/64
+!
+interface Ethernet2
+   description "to-S2"
+   mtu 9214
+   no switchport
+   ip address 172.16.4.6/30
+   ipv6 address 2001:db8:fab:2004::2/64
+!
+interface Ethernet3
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+   description "to-Firewall"
+   mtu 9214
+   switchport trunk allowed vlan 10,20,30,40,500-501
+   switchport mode trunk
+!
+interface Loopback0
+   ip address 10.0.0.4/32
+   ipv6 address 2001:db8:fab:ffff::104/128
+!
+interface Management1
+!
+interface Vlan10
+   description VLAN10-VRF-A
+   vrf VRF-A
+   ip address 192.168.10.104/24
+   ip virtual-router address 192.168.10.254/24
+!
+interface Vlan20
+   description VLAN20-VRF-B
+   vrf VRF-B
+   ip address 192.168.20.104/24
+   ip virtual-router address 192.168.20.254/24
+!
+interface Vlan30
+   description VLAN30-VRF-A
+   vrf VRF-A
+   ip address 192.168.30.104/24
+   ip virtual-router address 192.168.30.254/24
+!
+interface Vlan40
+   description VLAN30-VRF-B
+   vrf VRF-B
+   ip address 192.168.40.104/24
+   ip virtual-router address 192.168.40.254/24
+!
+interface Vlan500
+   vrf VRF-A
+   ip address 172.16.100.2/30
+!
+interface Vlan501
+   vrf VRF-B
+   ip address 172.16.200.2/30
+!
+interface Vxlan1
+   vxlan source-interface Loopback0
+   vxlan udp-port 4789
+   vxlan vlan 10 vni 10010
+   vxlan vlan 20 vni 10020
+   vxlan vlan 30 vni 10030
+   vxlan vlan 40 vni 10040
+   vxlan vrf VRF-A vni 50000
+   vxlan vrf VRF-B vni 50001
+   vxlan learn-restrict any
+!
+ip virtual-router mac-address de:ad:de:ad:de:ad
+!
+ip routing
+ip routing vrf VRF-A
+ip routing vrf VRF-B
+!
+ipv6 unicast-routing
+!
+router bgp 65004
+   router-id 10.0.0.4
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   maximum-paths 2 ecmp 2
+   neighbor EVPN peer group
+   neighbor EVPN remote-as 65100
+   neighbor EVPN next-hop-unchanged
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN ebgp-multihop 3
+   neighbor EVPN send-community extended
+   neighbor UNDERLAY peer group
+   neighbor UNDERLAY remote-as 65100
+   neighbor 10.0.1.1 peer group EVPN
+   neighbor 10.0.2.2 peer group EVPN
+   neighbor 172.16.4.1 peer group UNDERLAY
+   neighbor 172.16.4.5 peer group UNDERLAY
+   !
+   vlan 10
+      rd 65004:10010
+      route-target both 10010:10010
+      redistribute learned
+   !
+   vlan 20
+      rd 65004:10020
+      route-target both 10020:10020
+      redistribute learned
+   !
+   vlan 30
+      rd 65004:10030
+      route-target both 10030:10030
+      redistribute learned
+   !
+   vlan 40
+      rd 65004:10040
+      route-target both 10040:10040
+      redistribute learned
+   !
+   address-family evpn
+      neighbor EVPN activate
+   !
+   address-family ipv4
+      neighbor UNDERLAY activate
+      network 10.0.0.4/32
+   !
+   vrf VRF-A
+      rd 10.0.0.4:50000
+      route-target import evpn 50000:50000
+      route-target export evpn 50000:50000
+      router-id 172.16.100.2
+      timers bgp 3 9
+      neighbor 172.16.100.1 remote-as 65500
+      !
+      address-family ipv4
+         neighbor 172.16.100.1 activate
+         redistribute connected
+   !
+   vrf VRF-B
+      rd 10.0.0.4:50001
+      route-target import evpn 50001:50001
+      route-target export evpn 50001:50001
+      router-id 172.16.200.2
+      timers bgp 3 9
+      neighbor 172.16.200.1 remote-as 65500
+      !
+      address-family ipv4
+         neighbor 172.16.200.1 activate
+         redistribute connected
+!
+end

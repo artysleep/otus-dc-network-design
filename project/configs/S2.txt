@@ -1,0 +1,98 @@
+Spine-2#sh run
+! Command: show running-config
+! device: Spine-2 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname Spine-2
+!
+spanning-tree mode mstp
+!
+interface Ethernet1
+   description "to-L1"
+   mtu 9214
+   no switchport
+   ip address 172.16.1.5/30
+   ipv6 address 2001:db8:fab:2001::1/64
+!
+interface Ethernet2
+   description "to-L2"
+   mtu 9214
+   no switchport
+   ip address 172.16.2.5/30
+   ipv6 address 2001:db8:fab:2002::1/64
+!
+interface Ethernet3
+   description "to-L3"
+   mtu 9214
+   no switchport
+   ip address 172.16.3.5/30
+   ipv6 address 2001:db8:fab:2003::1/64
+!
+interface Ethernet4
+   description "to-L4"
+   mtu 9214
+   no switchport
+   ip address 172.16.4.5/30
+   ipv6 address 2001:db8:fab:2004::1/64
+!
+interface Ethernet5
+   description "to-L5"
+   mtu 9214
+   no switchport
+   ip address 172.16.5.5/30
+   ipv6 address 2001:db8:fab:2005::1/64
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Loopback0
+   ip address 10.0.2.2/32
+   ipv6 address 2001:db8:fab:ffff::2/128
+   ip ospf area 0.0.0.1
+   ipv6 ospf 1 area 0.0.0.1
+!
+interface Management1
+!
+interface Vxlan1
+   vxlan source-interface Loopback0
+   vxlan udp-port 4789
+   vxlan vlan 10 vni 10010
+!
+ip routing
+!
+ipv6 unicast-routing
+!
+peer-filter LEAFES
+   10 match as-range 65000-65100 result accept
+!
+router bgp 65100
+   router-id 10.0.2.2
+   no bgp default ipv4-unicast
+   timers bgp 3 9
+   bgp listen range 10.0.0.0/16 peer-group EVPN peer-filter LEAFS
+   bgp listen range 172.16.0.0/16 peer-group UNDERLAY peer-filter LEAFS
+   neighbor EVPN peer group
+   neighbor EVPN next-hop-unchanged
+   neighbor EVPN update-source Loopback0
+   neighbor EVPN ebgp-multihop 3
+   neighbor EVPN send-community extended
+   neighbor UNDERLAY peer group
+   !
+   address-family evpn
+      neighbor EVPN activate
+   !
+   address-family ipv4
+      neighbor UNDERLAY activate
+      network 10.0.2.2/32
+!
+end
