@@ -1,6 +1,7 @@
 # Проектная работа
 
-![Схема сети с изображением AS ](images/image2.png)
+![Схема сети с изображением AS ](images/image1.jpg)
+![Схема сети в EVE-NG ](images/image2.png)
 
 В данной работе UNDERLAY сеть была построена с исользованием eBGP af ipv4.
 
